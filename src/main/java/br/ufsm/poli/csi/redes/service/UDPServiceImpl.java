@@ -9,15 +9,19 @@ import lombok.SneakyThrows;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.util.HashSet;
+import java.util.Set;
 
 public class UDPServiceImpl implements UDPService {
 
     private UDPServiceUsuarioListener usuarioListener = null;
     private UDPServiceMensagemListener mensagemListener = null;
     private Usuario usuario = null;
+    private Set<Usuario> usuarios = new HashSet<>();
 
     public UDPServiceImpl() {
         new Thread(new EnviaSonda()).start();
+        new Thread(new TesteMensagem()).start();
         new Thread(new RecebeSonda()).start();
     }
 
@@ -43,12 +47,12 @@ public class UDPServiceImpl implements UDPService {
                         bMensagem.length
                 );
                 DatagramSocket socket = new DatagramSocket();
-                for (int i = 1; i < 255; i++) {
+//                for (int i = 1; i < 255; i++) {
 //                    pacote.setAddress(InetAddress.getByName("192.168.83." + i));
                     pacote.setAddress(InetAddress.getByName("255.255.255.255"));
                     pacote.setPort(8080);
                     socket.send(pacote);
-                }
+//                }
             }
         }
 
@@ -67,7 +71,29 @@ public class UDPServiceImpl implements UDPService {
                 Mensagem message = null;
                 try {
                     message = mapper.readValue(str, Mensagem.class);
-                    usuarioAlterado(message.getUsuario());
+                    switch (message.getTipoMensagem()) {
+                        case sonda -> {
+                            if (usuarios.add(message.getUsuario())) {
+                                if (usuarioListener != null) {
+                                    usuarioListener.usuarioAdicionado(message.getUsuario());
+                                }
+                            } else {
+                                if (usuarioListener != null) {
+                                    usuarioListener.usuarioAlterado(message.getUsuario());
+                                }
+                            }
+                        }
+                        case msg_individual -> {
+                            mensagemListener.mensagemRecebida(message.getMsg(), message.getUsuario(), false);
+                        }
+                        case msg_grupo -> {
+                            mensagemListener.mensagemRecebida(message.getMsg(), message.getUsuario(), true);
+                        }
+                        case fim_chat -> {
+                            usuarios.remove(message.getUsuario());
+                            usuarioListener.usuarioRemovido(message.getUsuario());
+                        }
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -76,9 +102,28 @@ public class UDPServiceImpl implements UDPService {
         }
     }
 
+    @SneakyThrows
     @Override
     public void enviarMensagem(String mensagem, Usuario destinatario, boolean chatGeral) {
+        Mensagem msg = Mensagem.builder()
+                .tipoMensagem(chatGeral ? TipoMensagem.msg_grupo : TipoMensagem.msg_individual)
+                .usuario(this.usuario)
+                .msg(mensagem)
+                .build();
 
+        ObjectMapper mapper = new ObjectMapper();
+        String messageString = mapper.writeValueAsString(msg);
+        byte[] bMensagem = messageString.getBytes();
+        DatagramPacket pacote = new DatagramPacket(bMensagem, bMensagem.length);
+        DatagramSocket socket = new DatagramSocket();
+        if (chatGeral || destinatario == null) {
+            pacote.setAddress(InetAddress.getByName("255.255.255.255"));
+        } else {
+            pacote.setAddress(destinatario.getEndereco());
+        }
+        pacote.setPort(8080);
+        socket.send(pacote);
+        socket.close();
     }
 
     @Override
@@ -95,4 +140,32 @@ public class UDPServiceImpl implements UDPService {
     public void addListenerUsuario(UDPServiceUsuarioListener listener) {
         this.usuarioListener = listener;
     }
+
+    private class TesteMensagem implements Runnable {
+        @SneakyThrows
+        @Override
+        public void run() {
+            while(true) {
+                Thread.sleep(5000);
+                Mensagem mensagem = Mensagem.builder()
+                        .tipoMensagem(TipoMensagem.msg_individual)
+                        .status(usuario.getStatus().toString())
+                        .usuario(usuario)
+                        .msg("Hello World!")
+                        .build();
+                ObjectMapper mapper = new ObjectMapper();
+                String strMensagem = mapper.writeValueAsString(mensagem);
+                byte[] bMensagem = strMensagem.getBytes();
+                DatagramPacket packet = new DatagramPacket(bMensagem, bMensagem.length);
+                DatagramSocket socket = new DatagramSocket();
+//                for (int i = 1; i < 255; i++) {
+//                    packet.setAddress(InetAddress.getByName("192.168.83." + i));
+                    packet.setAddress(InetAddress.getByName("255.255.255.255"));
+                    packet.setPort(8080);
+                    socket.send(packet);
+//                }
+            }
+        }
+    }
+
 }
