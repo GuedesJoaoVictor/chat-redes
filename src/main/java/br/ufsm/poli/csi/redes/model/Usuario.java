@@ -2,6 +2,7 @@ package br.ufsm.poli.csi.redes.model;
 
 import br.ufsm.poli.csi.redes.swing.ChatClientSwing;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -9,6 +10,7 @@ import java.net.InetAddress;
 
 @Data
 @AllArgsConstructor
+@Builder
 @NoArgsConstructor
 public class Usuario {
 

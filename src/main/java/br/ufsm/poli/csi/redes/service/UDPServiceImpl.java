@@ -17,12 +17,14 @@ public class UDPServiceImpl implements UDPService {
     private UDPServiceUsuarioListener usuarioListener = null;
     private UDPServiceMensagemListener mensagemListener = null;
     private Usuario usuario = null;
-    private Set<Usuario> usuarios = new HashSet<>();
+    private final Set<Usuario> usuariosSet = new HashSet<>();
+    private final Set<Usuario> activeUsers = new HashSet<>();
 
     public UDPServiceImpl() {
         new Thread(new EnviaSonda()).start();
         new Thread(new TesteMensagem()).start();
         new Thread(new RecebeSonda()).start();
+        new Thread(new ActiveUsers()).start();
     }
 
     private class EnviaSonda implements Runnable {
@@ -73,15 +75,12 @@ public class UDPServiceImpl implements UDPService {
                     message = mapper.readValue(str, Mensagem.class);
                     switch (message.getTipoMensagem()) {
                         case sonda -> {
-                            if (usuarios.add(message.getUsuario())) {
-                                if (usuarioListener != null) {
-                                    usuarioListener.usuarioAdicionado(message.getUsuario());
-                                }
+                            if (usuariosSet.add(message.getUsuario())) {
+                                usuarioListener.usuarioAdicionado(message.getUsuario());
                             } else {
-                                if (usuarioListener != null) {
-                                    usuarioListener.usuarioAlterado(message.getUsuario());
-                                }
+                                usuarioListener.usuarioAlterado(message.getUsuario());
                             }
+                            activeUsers.add(message.getUsuario());
                         }
                         case msg_individual -> {
                             mensagemListener.mensagemRecebida(message.getMsg(), message.getUsuario(), false);
@@ -90,7 +89,7 @@ public class UDPServiceImpl implements UDPService {
                             mensagemListener.mensagemRecebida(message.getMsg(), message.getUsuario(), true);
                         }
                         case fim_chat -> {
-                            usuarios.remove(message.getUsuario());
+                            usuariosSet.remove(message.getUsuario());
                             usuarioListener.usuarioRemovido(message.getUsuario());
                         }
                     }
@@ -98,6 +97,22 @@ public class UDPServiceImpl implements UDPService {
                     e.printStackTrace();
                 }
                 System.out.println(message);
+            }
+        }
+    }
+
+    private class ActiveUsers implements Runnable {
+        @SneakyThrows
+        @Override
+        public void run() {
+            while(true) {
+                Thread.sleep(30000);
+                usuariosSet.forEach(usuario -> {
+                    if (!activeUsers.contains(usuario)) {
+                        usuariosSet.remove(usuario);
+                    }
+                });
+                activeUsers.clear();
             }
         }
     }
