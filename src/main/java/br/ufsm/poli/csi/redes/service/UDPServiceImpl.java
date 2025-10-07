@@ -52,7 +52,7 @@ public class UDPServiceImpl implements UDPService {
                 pacote.setPort(8080);
                 for (int i = 1; i < 255; i++) {
                     String endereco = "192.168.83." + i;
-                    if (endereco.equals(InetAddress.getLocalHost().getHostAddress())) {
+                    if (!endereco.equals(InetAddress.getLocalHost().getHostAddress())) {
                         pacote.setAddress(InetAddress.getByName(endereco));
                         //pacote.setAddress(InetAddress.getByName("255.255.255.255"));
                         socket.send(pacote);
