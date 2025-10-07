@@ -90,8 +90,7 @@ public class UDPServiceImpl implements UDPService {
                             mensagemListener.mensagemRecebida(message.getMsg(), message.getUsuario(), false);
                         }
                         case msg_grupo -> {
-                            String enderecoUsuario = message.getUsuario().getEndereco().getLocalHost().getHostAddress();
-                            if (!enderecoUsuario.equals(InetAddress.getLocalHost().getHostAddress())) {
+                            if (message.getUsuario().getEndereco() != InetAddress.getLocalHost()) {
                                 mensagemListener.mensagemRecebida(message.getMsg(), message.getUsuario(), true);
                             }
                         }
