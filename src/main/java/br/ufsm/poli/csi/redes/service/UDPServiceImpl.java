@@ -22,7 +22,7 @@ public class UDPServiceImpl implements UDPService {
 
     public UDPServiceImpl() {
         new Thread(new EnviaSonda()).start();
-        new Thread(new TesteMensagem()).start();
+        // new Thread(new TesteMensagem()).start();
         new Thread(new RecebeSonda()).start();
         new Thread(new ActiveUsers()).start();
     }
@@ -49,13 +49,16 @@ public class UDPServiceImpl implements UDPService {
                         bMensagem.length
                 );
                 DatagramSocket socket = new DatagramSocket();
-//                for (int i = 1; i < 255; i++) {
-//                    pacote.setAddress(InetAddress.getByName("192.168.83." + i));
-                    pacote.setAddress(InetAddress.getByName("255.255.255.255"));
-                    pacote.setPort(8080);
-                    socket.send(pacote);
-                    socket.close();
-//                }
+                pacote.setPort(8080);
+                for (int i = 1; i < 255; i++) {
+                    String endereco = "192.168.83." + i;
+                    if (endereco != InetAddress.getLocalHost().getHostAddress()) {
+                        pacote.setAddress(InetAddress.getByName(endereco));
+                        //pacote.setAddress(InetAddress.getByName("255.255.255.255"));
+                        socket.send(pacote);
+                    }
+                }
+                socket.close();
             }
         }
 
