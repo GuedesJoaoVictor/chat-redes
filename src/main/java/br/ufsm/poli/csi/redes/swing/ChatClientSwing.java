@@ -88,6 +88,7 @@ public class ChatClientSwing extends JFrame {
                             PainelChatPVT painel = (PainelChatPVT) tabbedPane.getTabComponentAt(tab);
                             tabbedPane.remove(tab);
                             chatsAbertos.remove(painel.getUsuario());
+                            udpService.chatFechado(painel.getUsuario());
                         }
                     });
                     popupMenu.add(item);

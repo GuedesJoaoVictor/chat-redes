@@ -160,6 +160,11 @@ public class UDPServiceImpl implements UDPService {
     }
 
     @Override
+    public void chatFechado(Usuario usuario) {
+
+    }
+
+    @Override
     public void addListenerUsuario(UDPServiceUsuarioListener listener) {
         this.usuarioListener = listener;
     }
