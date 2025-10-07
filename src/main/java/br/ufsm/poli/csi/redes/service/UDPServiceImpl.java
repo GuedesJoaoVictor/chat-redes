@@ -39,7 +39,7 @@ public class UDPServiceImpl implements UDPService {
                 }
                 Mensagem mensagem = new Mensagem();
                 mensagem.setTipoMensagem(TipoMensagem.sonda);
-                mensagem.setUsuario(usuario);
+                mensagem.setUsuario(usuario.getNome());
                 mensagem.setStatus(usuario.getStatus().toString());
                 ObjectMapper mapper = new ObjectMapper();
                 String strMensagem = mapper.writeValueAsString(mensagem);
@@ -77,32 +77,32 @@ public class UDPServiceImpl implements UDPService {
                 Mensagem message = null;
                 try {
                     message = mapper.readValue(str, Mensagem.class);
+                    Usuario usuario = new Usuario(message.getUsuario(), Usuario.StatusUsuario.valueOf(message.getStatus()), packet.getAddress());
                     switch (message.getTipoMensagem()) {
                         case sonda -> {
-                            if (usuariosSet.add(message.getUsuario())) {
-                                usuarioListener.usuarioAdicionado(message.getUsuario());
+                            if (usuariosSet.add(usuario)) {
+                                usuarioListener.usuarioAdicionado(usuario);
                             } else {
-                                usuarioListener.usuarioAlterado(message.getUsuario());
+                                usuarioListener.usuarioAlterado(usuario);
                             }
-                            activeUsers.add(message.getUsuario());
+                            activeUsers.add(usuario);
                         }
                         case msg_individual -> {
-                            mensagemListener.mensagemRecebida(message.getMsg(), message.getUsuario(), false);
+                            mensagemListener.mensagemRecebida(message.getMsg(), usuario, false);
                         }
                         case msg_grupo -> {
-                            if (message.getUsuario().getEndereco() != InetAddress.getLocalHost()) {
-                                mensagemListener.mensagemRecebida(message.getMsg(), message.getUsuario(), true);
+                            if (!usuario.getEndereco().getHostAddress().equals(InetAddress.getLocalHost().getHostAddress())) {
+                                mensagemListener.mensagemRecebida(message.getMsg(), usuario, true);
                             }
                         }
                         case fim_chat -> {
-                            usuariosSet.remove(message.getUsuario());
-                            usuarioListener.usuarioRemovido(message.getUsuario());
+                            usuariosSet.remove(usuario);
+                            usuarioListener.usuarioRemovido(usuario);
                         }
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                System.out.println(message);
             }
         }
     }
@@ -128,7 +128,8 @@ public class UDPServiceImpl implements UDPService {
     public void enviarMensagem(String mensagem, Usuario destinatario, boolean chatGeral) {
         Mensagem msg = Mensagem.builder()
                 .tipoMensagem(chatGeral ? TipoMensagem.msg_grupo : TipoMensagem.msg_individual)
-                .usuario(this.usuario)
+                .usuario(this.usuario.getNome())
+                .status(this.usuario.getStatus().toString())
                 .msg(mensagem)
                 .build();
 
@@ -172,7 +173,7 @@ public class UDPServiceImpl implements UDPService {
                 Mensagem mensagem = Mensagem.builder()
                         .tipoMensagem(TipoMensagem.msg_individual)
                         .status(usuario.getStatus().toString())
-                        .usuario(usuario)
+                        .usuario(usuario.toString())
                         .msg("Hello World!")
                         .build();
                 ObjectMapper mapper = new ObjectMapper();

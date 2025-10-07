@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 public class Mensagem {
 
     private TipoMensagem tipoMensagem;
-    private Usuario usuario;
+    private String usuario;
     private String status;
     private String msg;
 }
