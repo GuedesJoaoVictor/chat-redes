@@ -90,7 +90,10 @@ public class UDPServiceImpl implements UDPService {
                             mensagemListener.mensagemRecebida(message.getMsg(), message.getUsuario(), false);
                         }
                         case msg_grupo -> {
-                            mensagemListener.mensagemRecebida(message.getMsg(), message.getUsuario(), true);
+                            String enderecoUsuario = message.getUsuario().getEndereco().getLocalHost().getHostAddress();
+                            if (!enderecoUsuario.equals(InetAddress.getLocalHost().getHostAddress())) {
+                                mensagemListener.mensagemRecebida(message.getMsg(), message.getUsuario(), true);
+                            }
                         }
                         case fim_chat -> {
                             usuariosSet.remove(message.getUsuario());
@@ -135,8 +138,9 @@ public class UDPServiceImpl implements UDPService {
         byte[] bMensagem = messageString.getBytes();
         DatagramPacket pacote = new DatagramPacket(bMensagem, bMensagem.length);
         DatagramSocket socket = new DatagramSocket();
-        if (chatGeral || destinatario == null) {
-            pacote.setAddress(InetAddress.getByName("255.255.255.255"));
+        if (chatGeral && destinatario.getNome().equals("Geral")) {
+            socket.setBroadcast(true);
+            pacote.setAddress(InetAddress.getByName("192.168.95.255"));
         } else {
             pacote.setAddress(destinatario.getEndereco());
         }
