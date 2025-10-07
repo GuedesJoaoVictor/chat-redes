@@ -54,6 +54,7 @@ public class UDPServiceImpl implements UDPService {
                     pacote.setAddress(InetAddress.getByName("255.255.255.255"));
                     pacote.setPort(8080);
                     socket.send(pacote);
+                    socket.close();
 //                }
             }
         }
@@ -178,6 +179,7 @@ public class UDPServiceImpl implements UDPService {
                     packet.setAddress(InetAddress.getByName("255.255.255.255"));
                     packet.setPort(8080);
                     socket.send(packet);
+                    socket.close();
 //                }
             }
         }
